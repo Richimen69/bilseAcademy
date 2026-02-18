@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CircleUser, Mail, Phone, Building, SendHorizonal, CheckCircle, Loader2 } from "lucide-react";
 import CustomInput from "./components/Input";
 import logo from "./assets/logo.svg";
-import { supabase } from "./lib/supabaseClient";
+import { enviarForm } from "./shared/services/form.service";
 function App() {
   // 1. Estados para guardar los datos, la carga y el éxito
   const [formData, setFormData] = useState({
@@ -29,24 +29,25 @@ function App() {
     setIsLoading(true);
     setErrorMessage("");
 
+    // 1. Preparamos los datos con los nombres que Django espera (nombre, email, telefono...)
+    const datosParaEnviar = {
+      nombre: formData.fullname,
+      email: formData.email,
+      telefono: formData.phone,
+      empresa: formData.company,
+    };
+
     try {
-      const { error } = await supabase
-        .from('registros_bilse') // Nombre exacto de tu tabla en Supabase
-        .insert([
-          {
-            nombre: formData.fullname,
-            email: formData.email,
-            telefono: formData.phone,
-            empresa: formData.company,
-          },
-        ]);
+      // 2. ¡Aquí está el cambio! Llamamos a la función externa
+      await enviarForm(datosParaEnviar);
 
-      if (error) throw error;
-
+      // 3. Si no hubo error en la línea anterior, asumimos éxito
       setIsSuccess(true);
       setFormData({ fullname: "", email: "", phone: "", company: "" }); // Limpiar form
+      
     } catch (error) {
       console.error("Error:", error);
+      // Opcional: Mostrar el mensaje exacto que mandó Django si quieres
       setErrorMessage("Hubo un error al registrarte. Intenta de nuevo.");
     } finally {
       setIsLoading(false);
